@@ -7,7 +7,7 @@ import { translate } from "@/lib/i18n";
 import { useSettings } from "@/components/SettingsContext";
 import { useCities } from "@/components/CitiesContext";
 
-export default function CitySearch() {
+export default function CitySearch({ disabled = false }: { disabled?: boolean }) {
   const { settings } = useSettings();
   const lang = settings.lang;
   const { addCity } = useCities();
@@ -35,8 +35,8 @@ export default function CitySearch() {
   return (
     <div ref={boxRef} className="relative w-full max-w-lg">
       <div className="flex gap-2">
-        <input value={query} onChange={e => setQuery(e.target.value)} placeholder={translate(lang, "searchPlaceholder")}
-          className="w-full rounded-full bg-white/15 px-5 py-3 text-white placeholder-white/50 outline-none ring-1 ring-white/25 backdrop-blur-md focus:ring-2 focus:ring-white/60" />
+        <input value={query} onChange={e => setQuery(e.target.value)} placeholder={disabled ? "Plan-Limit erreicht" : translate(lang, "searchPlaceholder")} disabled={disabled}
+          className="w-full rounded-full bg-white/15 px-5 py-3 text-white placeholder-white/50 outline-none ring-1 ring-white/25 backdrop-blur-md focus:ring-2 focus:ring-white/60 disabled:opacity-50 disabled:cursor-not-allowed" />
         {busy && <div className="self-center"><div className="h-5 w-5 animate-spin rounded-full border-2 border-white/30 border-t-white" /></div>}
       </div>
       {open && results.length > 0 && (

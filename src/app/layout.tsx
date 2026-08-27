@@ -4,6 +4,7 @@ import "./globals.css";
 import { SettingsProvider } from "@/components/SettingsContext";
 import { CitiesProvider } from "@/components/CitiesContext";
 import { AuthProvider } from "@/components/AuthContext";
+import { SubscriptionProvider } from "@/components/SubscriptionContext";
 
 export default function RootLayout({
   children,
@@ -17,9 +18,11 @@ export default function RootLayout({
         style={{ backgroundAttachment: "fixed" }}
       >
         <AuthProvider>
-          <SettingsProvider>
-            <CitiesProvider>{children}</CitiesProvider>
-          </SettingsProvider>
+          <SubscriptionProvider>
+            <SettingsProvider>
+              <CitiesProvider>{children}</CitiesProvider>
+            </SettingsProvider>
+          </SubscriptionProvider>
         </AuthProvider>
       </body>
     </html>
