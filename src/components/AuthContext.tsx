@@ -20,11 +20,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const sb = getSupabase();
+    if (!sb) { setLoading(false); return; }
 
     sb.auth.getUser().then(({ data: { user } }) => {
       setUser(user);
       setLoading(false);
-    });
+    }).catch(() => setLoading(false));
 
     const { data: { subscription } } = sb.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
@@ -35,13 +36,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const login = async (email: string, password: string) => {
-    const { error } = await getSupabase().auth.signInWithPassword({ email, password });
+    const sb = getSupabase();
+    if (!sb) return { error: "Supabase not configured" };
+    const { error } = await sb.auth.signInWithPassword({ email, password });
     if (error) return { error: error.message };
     return {};
   };
 
   const signup = async (email: string, password: string, name?: string) => {
-    const { error } = await getSupabase().auth.signUp({
+    const sb = getSupabase();
+    if (!sb) return { error: "Supabase not configured" };
+    const { error } = await sb.auth.signUp({
       email,
       password,
       options: { data: { name } },
@@ -51,7 +56,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const logout = async () => {
-    await getSupabase().auth.signOut();
+    const sb = getSupabase();
+    if (sb) await sb.auth.signOut();
   };
 
   return (

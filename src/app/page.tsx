@@ -6,11 +6,18 @@ import CitySearch from "@/components/CitySearch";
 import CityCard from "@/components/CityCard";
 import SettingsPanel from "@/components/SettingsPanel";
 import { useCities } from "@/components/CitiesContext";
+import { useEffect } from "react";
 
 export default function Home() {
   const { cities } = useCities();
   const { user, logout, loading } = useAuth();
   const router = useRouter();
+
+  useEffect(() => {
+    if (!loading && !user) {
+      router.push("/login");
+    }
+  }, [user, loading, router]);
 
   if (loading) {
     return (
@@ -23,10 +30,7 @@ export default function Home() {
     );
   }
 
-  if (!user) {
-    router.push("/login");
-    return null;
-  }
+  if (!user) return null;
 
   return (
     <main className="mx-auto max-w-4xl space-y-6 px-4 py-8">
