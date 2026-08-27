@@ -45,8 +45,10 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
 
       if (user) {
         const subs = await getSubscriptions();
-        const active = subs.find(s => s.userId === user.id && s.status === "active");
+        console.log("[Sub]", { userId: user.id, email: user.email, subs });
+        const active = subs.find(s => s.status === "active");
         if (active) {
+          console.log("[Sub] Found:", active.plan);
           setSubscription(active);
           setPlan(active.plan);
           setPlanDetails(plansRes.plans[active.plan] ?? plansRes.plans.free ?? DEFAULT_PLAN);
@@ -58,7 +60,8 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
       } else {
         setPlanDetails(plansRes.plans.free ?? DEFAULT_PLAN);
       }
-    } catch {
+    } catch (e) {
+      console.error("[Sub] Error:", e);
       setPlanDetails(DEFAULT_PLAN);
     } finally {
       setLoading(false);

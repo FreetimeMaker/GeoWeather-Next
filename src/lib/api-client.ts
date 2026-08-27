@@ -1,3 +1,5 @@
+import { getSupabase } from "@/lib/supabase/client";
+
 const BASE_URL = "https://all-api-node.vercel.app";
 
 export interface Plan {
@@ -20,21 +22,27 @@ export interface Subscription {
   expiresAt?: string;
 }
 
-export interface HealthResponse {
-  status: string;
-  service: string;
-  timestamp: string;
-}
-
 const API_BASE = `${BASE_URL}/api/v1`;
 
 async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...((options?.headers as Record<string, string>) ?? {}),
+  };
+
+  try {
+    const sb = getSupabase();
+    if (sb) {
+      const { data: { session } } = await sb.auth.getSession();
+      if (session?.access_token) {
+        headers["Authorization"] = `Bearer ${session.access_token}`;
+      }
+    }
+  } catch {}
+
   const res = await fetch(`${API_BASE}${path}`, {
     ...options,
-    headers: {
-      "Content-Type": "application/json",
-      ...options?.headers,
-    },
+    headers,
   });
   if (!res.ok) {
     const text = await res.text().catch(() => "Unknown error");
@@ -59,11 +67,6 @@ export async function redeemCode(code: string): Promise<{ success: boolean; plan
   });
 }
 
-export async function getSubscriptionForUser(userId: string): Promise<Subscription | null> {
-  const subs = await getSubscriptions();
-  return subs.find(s => s.userId === userId && s.status === "active") ?? null;
-}
-
-export async function checkHealth(): Promise<HealthResponse> {
-  return apiFetch<HealthResponse>("/health");
+export async function checkHealth() {
+  return apiFetch<{ status: string; service: string; timestamp: string }>("/health");
 }
