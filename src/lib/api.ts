@@ -14,9 +14,9 @@ function buildWeatherUnits(s: Settings): { [k: string]: string } {
   return p;
 }
 
-export async function getForecast(lat: number, lon: number, settings: Settings): Promise<ForecastData> {
+export async function getForecast(lat: number, lon: number, settings: Settings, forecastDays = 16): Promise<ForecastData> {
   const u = new URLSearchParams(buildWeatherUnits(settings)).toString();
-  const url = `${FORECAST_URL}?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,is_day,precipitation,weather_code,cloud_cover,surface_pressure,wind_speed_10m,wind_direction_10m,wind_gusts_10m&hourly=temperature_2m,apparent_temperature,precipitation_probability,weather_code,is_day&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,precipitation_sum,wind_speed_10m_max,wind_gusts_10m_max,sunrise,sunset&forecast_days=16&timezone=auto&${u}`;
+  const url = `${FORECAST_URL}?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,is_day,precipitation,weather_code,cloud_cover,surface_pressure,wind_speed_10m,wind_direction_10m,wind_gusts_10m&hourly=temperature_2m,apparent_temperature,precipitation_probability,weather_code,is_day&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,precipitation_sum,wind_speed_10m_max,wind_gusts_10m_max,sunrise,sunset&forecast_days=${forecastDays}&timezone=auto&${u}`;
   const res = await fetch(url, { next: { revalidate: 1800 } });
   if (!res.ok) throw new Error(`Forecast failed: ${res.status}`);
   return (await res.json()) as ForecastData;

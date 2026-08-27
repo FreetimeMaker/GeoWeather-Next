@@ -5,6 +5,7 @@ import { useMemo } from "react";
 import Link from "next/link";
 import { useCities } from "@/components/CitiesContext";
 import { useSettings } from "@/components/SettingsContext";
+import { useSubscription } from "@/components/SubscriptionContext";
 import { useForecast } from "@/hooks/useForecast";
 import { useAirQuality } from "@/hooks/useAirQuality";
 import CurrentWeather from "@/components/CurrentWeather";
@@ -24,26 +25,29 @@ export default function CityDetail() {
   const t = (k: Parameters<typeof translate>[1]) => translate(lang, k);
 
   const loc = useMemo(() => cities.find(c => String(c.id) === params.id) ?? null, [cities, params.id]);
-  const { data, loading, error, retry } = useForecast(loc, settings);
+  const { planDetails } = useSubscription();
+  const { data, loading, error, retry } = useForecast(loc, settings, planDetails.forecastDays);
   const { data: aqData } = useAirQuality(loc);
 
   const hourly = useMemo(() => {
     if (!data?.hourly) return [];
-    return data.hourly.time.map((time, i) => ({
+    const maxHours = planDetails.forecastDays * 24;
+    return data.hourly.time.slice(0, maxHours).map((time, i) => ({
       time, temperature_2m: data.hourly!.temperature_2m[i], apparent_temperature: data.hourly!.apparent_temperature[i],
       precipitation_probability: data.hourly!.precipitation_probability[i], weather_code: data.hourly!.weather_code[i], is_day: data.hourly!.is_day[i],
     }));
-  }, [data]);
+  }, [data, planDetails.forecastDays]);
 
   const daily = useMemo(() => {
     if (!data?.daily) return [];
-    return data.daily.time.map((time, i) => ({
+    const days = data.daily.time.slice(0, planDetails.forecastDays).map((time, i) => ({
       time, weather_code: data.daily!.weather_code[i], temperature_2m_max: data.daily!.temperature_2m_max[i],
       temperature_2m_min: data.daily!.temperature_2m_min[i], precipitation_probability_max: data.daily!.precipitation_probability_max[i],
       precipitation_sum: data.daily!.precipitation_sum[i], wind_speed_10m_max: data.daily!.wind_speed_10m_max[i],
       wind_gusts_10m_max: data.daily!.wind_gusts_10m_max[i], sunrise: data.daily!.sunrise[i], sunset: data.daily!.sunset[i],
     }));
-  }, [data]);
+    return days;
+  }, [data, planDetails.forecastDays]);
 
   if (!loc) return (
     <main className="mx-auto max-w-4xl px-4 py-12 text-center">
