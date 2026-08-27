@@ -1,6 +1,11 @@
 import { getSupabase } from "@/lib/supabase/client";
 
-const BASE_URL = "https://all-api-node.vercel.app";
+const PLAN_DETAILS: Record<string, { maxLocations: number; forecastDays: number; notifications: boolean }> = {
+  free: { maxLocations: 5, forecastDays: 1, notifications: false },
+  freemium: { maxLocations: 10, forecastDays: 3, notifications: true },
+  premium: { maxLocations: 15, forecastDays: 7, notifications: true },
+  ultrimium: { maxLocations: 20, forecastDays: 14, notifications: true },
+};
 
 export interface Plan {
   maxLocations: number;
@@ -8,65 +13,61 @@ export interface Plan {
   notifications: boolean;
 }
 
-export interface PlansResponse {
-  plans: Record<string, Plan>;
-  types: string[];
-}
-
 export interface Subscription {
   id: string;
-  userId: string;
+  user_id: string;
   plan: string;
   status: string;
-  createdAt?: string;
-  expiresAt?: string;
+  created_at?: string;
+  expires_at?: string;
 }
 
-const API_BASE = `${BASE_URL}/api/v1`;
+export async function getUserSubscription(): Promise<Subscription | null> {
+  const sb = getSupabase();
+  if (!sb) return null;
 
-async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
-  const headers: Record<string, string> = {
-    "Content-Type": "application/json",
-    ...((options?.headers as Record<string, string>) ?? {}),
-  };
+  const { data: { user } } = await sb.auth.getUser();
+  if (!user) return null;
 
-  try {
-    const sb = getSupabase();
-    if (sb) {
-      const { data: { session } } = await sb.auth.getSession();
-      if (session?.access_token) {
-        headers["Authorization"] = `Bearer ${session.access_token}`;
-      }
-    }
-  } catch {}
+  const { data, error } = await sb
+    .from("geoweather_subscriptions")
+    .select("*")
+    .eq("user_id", user.id)
+    .eq("status", "active")
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
 
-  const res = await fetch(`${API_BASE}${path}`, {
-    ...options,
-    headers,
-  });
-  if (!res.ok) {
-    const text = await res.text().catch(() => "Unknown error");
-    throw new Error(`API ${res.status}: ${text}`);
+  if (error) {
+    console.error("[Sub] Supabase query error:", error.message);
+    return null;
   }
-  return res.json();
+
+  return data;
 }
 
-export async function getPlans(): Promise<PlansResponse> {
-  return apiFetch<PlansResponse>("/geoweather/subscriptions/plans");
+export function getPlanDetails(planName: string): Plan {
+  return PLAN_DETAILS[planName] ?? PLAN_DETAILS.free;
 }
 
-export async function getSubscriptions(): Promise<Subscription[]> {
-  const res = await apiFetch<{ subscriptions: Subscription[] }>("/geoweather/subscriptions");
-  return res.subscriptions ?? [];
-}
+export async function redeemCode(code: string): Promise<{ success: boolean; message?: string }> {
+  const sb = getSupabase();
+  if (!sb) return { success: false, message: "Supabase nicht konfiguriert" };
 
-export async function redeemCode(code: string): Promise<{ success: boolean; plan?: string; message?: string }> {
-  return apiFetch("/geoweather/subscriptions/redeem", {
-    method: "POST",
-    body: JSON.stringify({ code }),
-  });
-}
+  const { data: { user } } = await sb.auth.getUser();
+  if (!user) return { success: false, message: "Nicht eingeloggt" };
 
-export async function checkHealth() {
-  return apiFetch<{ status: string; service: string; timestamp: string }>("/health");
+  const { error } = await sb
+    .from("geoweather_subscriptions")
+    .insert({
+      user_id: user.id,
+      plan: code.toLowerCase().trim(),
+      status: "active",
+    });
+
+  if (error) {
+    return { success: false, message: error.message };
+  }
+
+  return { success: true, message: "Plan aktiviert!" };
 }
