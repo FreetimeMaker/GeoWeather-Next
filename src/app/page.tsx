@@ -1,55 +1,69 @@
 "use client";
 
-import CitySearch from "@/components/CitySearch";
-import CityCard from "@/components/CityCard";
-import SettingsPanel from "@/components/SettingsPanel";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { useCities } from "@/components/CitiesContext";
-import { useSettings } from "@/components/SettingsContext";
-import { translate } from "@/lib/i18n";
+import CitySearchDialog from "@/components/CitySearchDialog";
 
 export default function Home() {
-  const { cities } = useCities();
-  const { settings } = useSettings();
-  const lang = settings.lang;
-  const t = (k: Parameters<typeof translate>[1]) => translate(lang, k);
+  const { cities, removeCity } = useCities();
+  const [searchOpen, setSearchOpen] = useState(false);
+  const router = useRouter();
 
   return (
-    <main className="mx-auto max-w-4xl space-y-6 px-4 py-8">
-      <header className="text-center">
-        <div className="mx-auto mb-2 flex h-14 w-14 items-center justify-center rounded-2xl bg-white/15 text-3xl shadow-inner ring-1 ring-white/25">
-          🌤️
-        </div>
-        <h1 className="text-3xl font-bold">{t("appName")}</h1>
-        <p className="text-white/70">{t("tagline")}</p>
-      </header>
-
-      <div className="flex justify-center">
-        <CitySearch />
+    <div className="min-h-screen bg-gray-50 pb-24">
+      <div className="divide-y divide-gray-200">
+        {cities.map((c) => (
+          <div
+            key={c.id}
+            className="flex items-center justify-between px-6 py-5 transition hover:bg-gray-100 cursor-pointer"
+            onClick={() => router.push(`/city/${c.id}`)}
+          >
+            <div>
+              <p className="text-lg font-semibold text-gray-900">{c.name}</p>
+              <p className="text-sm text-gray-500">
+                Lat: {c.latitude.toFixed(4)}, Lon: {c.longitude.toFixed(4)}
+              </p>
+            </div>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                removeCity(c.id);
+              }}
+              className="p-2 text-gray-400 hover:text-red-500 transition"
+              title="Remove"
+              aria-label="Remove city"
+            >
+              <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="1.8">
+                <path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6h14z" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M10 11v6M14 11v6" strokeLinecap="round" />
+              </svg>
+            </button>
+          </div>
+        ))}
       </div>
 
-      <section>
-        <h2 className="mb-3 text-sm uppercase tracking-widest text-white/60">
-          {t("myCities")}
-        </h2>
-        {cities.length === 0 ? (
-          <div className="rounded-3xl bg-white/10 p-8 text-center backdrop-blur-md ring-1 ring-white/20">
-            <p className="font-semibold">{t("noCities")}</p>
-            <p className="mt-1 text-white/70">{t("noCitiesHint")}</p>
-          </div>
-        ) : (
-          <div className="grid gap-4 sm:grid-cols-2">
-            {cities.map((c) => (
-              <CityCard key={c.id} loc={c} />
-            ))}
-          </div>
-        )}
-      </section>
+      <button
+        onClick={() => setSearchOpen(true)}
+        className="fixed bottom-6 right-6 flex h-14 w-14 items-center justify-center rounded-full bg-purple-300 text-purple-900 shadow-lg transition hover:bg-purple-400 z-30"
+        aria-label="Add city"
+      >
+        <svg viewBox="0 0 24 24" className="h-7 w-7" fill="none" stroke="currentColor" strokeWidth="2.5">
+          <path d="M12 5v14M5 12h14" strokeLinecap="round" />
+        </svg>
+      </button>
 
-      <SettingsPanel />
+      <button
+        onClick={() => window.open("https://github.com/FreetimeMaker/GeoWeather", "_blank")}
+        className="fixed bottom-6 left-6 flex h-14 w-14 items-center justify-center rounded-full bg-purple-300 text-purple-900 shadow-lg transition hover:bg-purple-400 z-30"
+        aria-label="Donate"
+      >
+        <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="1.8">
+          <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </button>
 
-      <footer className="pt-2 text-center text-xs text-white/50">
-        {t("basedOn")}
-      </footer>
-    </main>
+      <CitySearchDialog open={searchOpen} onClose={() => setSearchOpen(false)} />
+    </div>
   );
 }

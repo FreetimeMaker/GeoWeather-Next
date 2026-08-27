@@ -1,6 +1,4 @@
 import type {
-  AirQualityData,
-  ArchiveData,
   ForecastData,
   GeocodingResponse,
   GeoLocation,
@@ -9,8 +7,6 @@ import type {
 
 const FORECAST_URL = "https://api.open-meteo.com/v1/forecast";
 const GEOCODING_URL = "https://geocoding-api.open-meteo.com/v1/search";
-const AIR_QUALITY_URL = "https://air-quality-api.open-meteo.com/v1/air-quality";
-const ARCHIVE_URL = "https://archive-api.open-meteo.com/v1/archive";
 
 function buildWeatherUnits(s: Settings): { [k: string]: string } {
   const params: { [k: string]: string } = {};
@@ -56,35 +52,4 @@ export function cityLabel(loc: GeoLocation): string {
     parts.push(loc.admin1);
   if (loc.country) parts.push(loc.country);
   return parts.join(", ");
-}
-
-export async function getAirQuality(
-  lat: number,
-  lon: number,
-): Promise<AirQualityData> {
-  const url =
-    `${AIR_QUALITY_URL}?latitude=${lat}&longitude=${lon}` +
-    `&hourly=pm10,pm2_5,us_aqi,eu_aqi,nitrogen_dioxide,ozone` +
-    `&timezone=auto`;
-  const res = await fetch(url, { next: { revalidate: 3600 } });
-  if (!res.ok) throw new Error(`Air quality request failed: ${res.status}`);
-  return (await res.json()) as AirQualityData;
-}
-
-export async function getArchive(
-  lat: number,
-  lon: number,
-  startDate: string,
-  endDate: string,
-  settings: Settings,
-): Promise<ArchiveData> {
-  const unitParams = new URLSearchParams(buildWeatherUnits(settings)).toString();
-  const url =
-    `${ARCHIVE_URL}?latitude=${lat}&longitude=${lon}` +
-    `&start_date=${startDate}&end_date=${endDate}` +
-    `&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,wind_speed_10m_max` +
-    `&timezone=auto&${unitParams}`;
-  const res = await fetch(url, { next: { revalidate: 3600 } });
-  if (!res.ok) throw new Error(`Archive request failed: ${res.status}`);
-  return (await res.json()) as ArchiveData;
 }

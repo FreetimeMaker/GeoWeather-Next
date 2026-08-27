@@ -11,12 +11,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body
-        className="min-h-screen bg-gradient-to-b from-sky-500 via-blue-600 to-indigo-800 font-sans text-white"
-        style={{ backgroundAttachment: "fixed" }}
-      >
+      <body>
         <SettingsProvider>
-          <CitiesProvider>{children}</CitiesProvider>
+          <CitiesProvider>
+            <div className="mx-auto min-h-screen max-w-lg">{children}</div>
+          </CitiesProvider>
         </SettingsProvider>
       </body>
     </html>

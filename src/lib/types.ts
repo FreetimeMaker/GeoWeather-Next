@@ -44,68 +44,6 @@ export interface CurrentWeather {
   wind_gusts_10m: number;
 }
 
-export interface HourlyPoint {
-  time: string;
-  temperature_2m: number;
-  apparent_temperature: number;
-  precipitation_probability: number;
-  weather_code: number;
-  is_day: number;
-}
-
-export interface DailyPoint {
-  time: string;
-  weather_code: number;
-  temperature_2m_max: number;
-  temperature_2m_min: number;
-  precipitation_probability_max: number;
-  precipitation_sum: number;
-  wind_speed_10m_max: number;
-  wind_gusts_10m_max: number;
-  sunrise: string;
-  sunset: string;
-}
-
-export interface AirQualityData {
-  latitude: number;
-  longitude: number;
-  timezone: string;
-  utc_offset_seconds: number;
-  hourly?: {
-    time: string[];
-    pm10: number[];
-    pm2_5: number[];
-    us_aqi: number[];
-    eu_aqi: number[];
-    nitrogen_dioxide: number[];
-    ozone: number[];
-  };
-}
-
-export interface ArchiveDay {
-  time: string;
-  weather_code: number;
-  temperature_2m_max: number;
-  temperature_2m_min: number;
-  precipitation_sum: number;
-  wind_speed_10m_max: number;
-}
-
-export interface ArchiveData {
-  latitude: number;
-  longitude: number;
-  timezone: string;
-  utc_offset_seconds: number;
-  daily?: {
-    time: string[];
-    weather_code: number[];
-    temperature_2m_max: number[];
-    temperature_2m_min: number[];
-    precipitation_sum: number[];
-    wind_speed_10m_max: number[];
-  };
-}
-
 export interface ForecastData {
   latitude: number;
   longitude: number;
