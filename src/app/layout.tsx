@@ -3,6 +3,7 @@
 import "./globals.css";
 import { SettingsProvider } from "@/components/SettingsContext";
 import { CitiesProvider } from "@/components/CitiesContext";
+import { AuthProvider } from "@/components/AuthContext";
 
 export default function RootLayout({
   children,
@@ -11,12 +12,15 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body>
-        <SettingsProvider>
-          <CitiesProvider>
-            <div className="mx-auto min-h-screen max-w-lg">{children}</div>
-          </CitiesProvider>
-        </SettingsProvider>
+      <body
+        className="min-h-screen bg-gradient-to-b from-sky-500 via-blue-600 to-indigo-800 font-sans text-white"
+        style={{ backgroundAttachment: "fixed" }}
+      >
+        <AuthProvider>
+          <SettingsProvider>
+            <CitiesProvider>{children}</CitiesProvider>
+          </SettingsProvider>
+        </AuthProvider>
       </body>
     </html>
   );

@@ -2,11 +2,18 @@
 
 import { useParams, useRouter } from "next/navigation";
 import { useMemo } from "react";
+import Link from "next/link";
 import { useCities } from "@/components/CitiesContext";
 import { useSettings } from "@/components/SettingsContext";
 import { useForecast } from "@/hooks/useForecast";
-import { getDescription } from "@/lib/weatherCodes";
-import { displayTemp, formatWind } from "@/lib/units";
+import { useAirQuality } from "@/hooks/useAirQuality";
+import CurrentWeather from "@/components/CurrentWeather";
+import HourlyStrip from "@/components/HourlyStrip";
+import DailyList from "@/components/DailyList";
+import SunTimes from "@/components/SunTimes";
+import AirQualityCard from "@/components/AirQualityCard";
+import WeatherHistory from "@/components/WeatherHistory";
+import { translate } from "@/lib/i18n";
 
 export default function CityDetail() {
   const params = useParams<{ id: string }>();
@@ -14,89 +21,65 @@ export default function CityDetail() {
   const { cities } = useCities();
   const { settings } = useSettings();
   const lang = settings.lang;
+  const t = (k: Parameters<typeof translate>[1]) => translate(lang, k);
 
-  const loc = useMemo(
-    () => cities.find((c) => String(c.id) === params.id) ?? null,
-    [cities, params.id],
+  const loc = useMemo(() => cities.find(c => String(c.id) === params.id) ?? null, [cities, params.id]);
+  const { data, loading, error, retry } = useForecast(loc, settings);
+  const { data: aqData } = useAirQuality(loc);
+
+  const hourly = useMemo(() => {
+    if (!data?.hourly) return [];
+    return data.hourly.time.map((time, i) => ({
+      time, temperature_2m: data.hourly!.temperature_2m[i], apparent_temperature: data.hourly!.apparent_temperature[i],
+      precipitation_probability: data.hourly!.precipitation_probability[i], weather_code: data.hourly!.weather_code[i], is_day: data.hourly!.is_day[i],
+    }));
+  }, [data]);
+
+  const daily = useMemo(() => {
+    if (!data?.daily) return [];
+    return data.daily.time.map((time, i) => ({
+      time, weather_code: data.daily!.weather_code[i], temperature_2m_max: data.daily!.temperature_2m_max[i],
+      temperature_2m_min: data.daily!.temperature_2m_min[i], precipitation_probability_max: data.daily!.precipitation_probability_max[i],
+      precipitation_sum: data.daily!.precipitation_sum[i], wind_speed_10m_max: data.daily!.wind_speed_10m_max[i],
+      wind_gusts_10m_max: data.daily!.wind_gusts_10m_max[i], sunrise: data.daily!.sunrise[i], sunset: data.daily!.sunset[i],
+    }));
+  }, [data]);
+
+  if (!loc) return (
+    <main className="mx-auto max-w-4xl px-4 py-12 text-center">
+      <p className="text-lg">{t("noCities")}</p>
+      <button onClick={() => router.push("/")} className="mt-4 rounded-full bg-white px-5 py-2 font-medium text-sky-700">{t("back")}</button>
+    </main>
   );
 
-  const { data, loading, error } = useForecast(loc, settings);
-
-  if (!loc) {
-    return (
-      <div className="flex min-h-screen flex-col items-center justify-center bg-gray-50 p-6">
-        <p className="text-lg text-gray-600">City not found</p>
-        <button
-          onClick={() => router.push("/")}
-          className="mt-4 text-purple-600 font-medium"
-        >
-          Go back
-        </button>
-      </div>
-    );
-  }
-
-  const cw = data?.current;
-
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="px-4 pt-4">
-        <button
-          onClick={() => router.push("/")}
-          className="p-2 text-gray-400 hover:text-gray-600 transition"
-          aria-label="Back"
-        >
-          <svg viewBox="0 0 24 24" className="h-7 w-7" fill="none" stroke="currentColor" strokeWidth="2.2">
-            <path d="M9 14l-4-4 4-4" strokeLinecap="round" strokeLinejoin="round" />
-            <path d="M5 10h11a4 4 0 010 8h-1" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
+    <main className="mx-auto max-w-4xl space-y-6 px-4 py-8">
+      <div className="flex items-center justify-between">
+        <button onClick={() => router.push("/")} className="flex items-center gap-1 rounded-full bg-white/10 px-4 py-2 text-sm text-white backdrop-blur-md ring-1 ring-white/20 hover:bg-white/20">
+          ← {t("back")}
         </button>
+        <div className="flex items-center gap-3">
+          <Link href={`/radar/${loc.id}`} className="rounded-full bg-white/15 px-4 py-2 text-sm text-white backdrop-blur-md ring-1 ring-white/20 transition hover:bg-white/25">🗺️ {t("radar")}</Link>
+          <div className="text-right">
+            <h1 className="text-2xl font-bold">{loc.name}</h1>
+            <p className="text-sm text-white/70">{[loc.country, loc.admin1].filter(Boolean).join(", ")}</p>
+          </div>
+        </div>
       </div>
 
-      <div className="flex flex-col items-center px-6 pt-4 pb-12">
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">{loc.name}</h1>
+      {loading && <div className="flex flex-col items-center gap-2 py-16 text-white/80"><div className="h-8 w-8 animate-spin rounded-full border-2 border-white/30 border-t-white" /><p>{t("loading")}</p></div>}
+      {error && !loading && <div className="rounded-3xl bg-white/10 p-8 text-center backdrop-blur-md ring-1 ring-white/20"><p>{t("error")}</p><button onClick={retry} className="mt-4 rounded-full bg-white px-5 py-2 font-medium text-sky-700">{t("retry")}</button></div>}
 
-        {loading && (
-          <div className="mt-20 flex flex-col items-center gap-3">
-            <div className="h-8 w-8 animate-spin rounded-full border-3 border-gray-300 border-t-purple-500" />
-          </div>
-        )}
-
-        {error && !loading && (
-          <div className="mt-20 text-center">
-            <p className="text-gray-500">Failed to load weather.</p>
-            <button
-              onClick={() => window.location.reload()}
-              className="mt-3 text-purple-600 font-medium"
-            >
-              Retry
-            </button>
-          </div>
-        )}
-
-        {!loading && !error && cw && (
-          <>
-            <p className="text-[120px] font-light leading-none text-gray-900 mt-2 tracking-tight">
-              {displayTemp(cw.temperature_2m, settings)}
-            </p>
-
-            <p className="text-xl text-gray-500 mt-2">
-              {getDescription(cw.weather_code, lang)}
-            </p>
-
-            <div className="mt-8 w-full max-w-sm rounded-2xl bg-white p-5 shadow-sm ring-1 ring-gray-100">
-              <div className="space-y-2">
-                <p className="text-gray-700">
-                  Wind: {formatWind(cw.wind_speed_10m, settings)}
-                </p>
-                <p className="text-gray-700">
-                  Humidity: {cw.relative_humidity_2m != null ? `${cw.relative_humidity_2m}%` : "—"}
-                </p>
-              </div>
-            </div>
-          </>
-        )}
-      </div>
-    </div>
+      {!loading && !error && data && (
+        <>
+          {data.current && <CurrentWeather cw={data.current} />}
+          {data.daily && <SunTimes sunrise={data.daily.sunrise[0]} sunset={data.daily.sunset[0]} />}
+          {hourly.length > 0 && <HourlyStrip hourly={hourly} />}
+          {daily.length > 0 && <DailyList daily={daily} />}
+          {aqData && <AirQualityCard data={aqData} />}
+          <WeatherHistory loc={loc} />
+        </>
+      )}
+    </main>
   );
 }

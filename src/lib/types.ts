@@ -20,12 +20,10 @@ export interface GeoLocation {
   admin1?: string;
   timezone?: string;
   elevation?: number;
-  feature_code?: string;
 }
 
 export interface GeocodingResponse {
   results?: GeoLocation[];
-  generationtime_ms?: number;
 }
 
 export interface CurrentWeather {
@@ -71,4 +69,38 @@ export interface ForecastData {
     sunrise: string[];
     sunset: string[];
   };
+}
+
+export interface AirQualityData {
+  latitude: number;
+  longitude: number;
+  timezone: string;
+  hourly?: {
+    time: string[];
+    pm10: number[];
+    pm2_5: number[];
+    us_aqi: number[];
+    nitrogen_dioxide: number[];
+    ozone: number[];
+  };
+}
+
+export interface ArchiveData {
+  latitude: number;
+  longitude: number;
+  timezone: string;
+  daily?: {
+    time: string[];
+    weather_code: number[];
+    temperature_2m_max: number[];
+    temperature_2m_min: number[];
+    precipitation_sum: number[];
+    wind_speed_10m_max: number[];
+  };
+}
+
+export interface User {
+  id: string;
+  email: string;
+  name?: string;
 }
