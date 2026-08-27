@@ -1,52 +1,56 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState } from "react";
-import type { User } from "@/lib/types";
+import { supabase } from "@/lib/supabase/client";
+import type { User as SupabaseUser } from "@supabase/supabase-js";
 
 interface AuthCtx {
-  user: User | null;
+  user: SupabaseUser | null;
   loading: boolean;
-  login: (email: string, password: string) => Promise<void>;
-  signup: (email: string, password: string, name?: string) => Promise<void>;
-  logout: () => void;
+  login: (email: string, password: string) => Promise<{ error?: string }>;
+  signup: (email: string, password: string, name?: string) => Promise<{ error?: string }>;
+  logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthCtx | null>(null);
-const STORAGE_KEY = "geoweather:user";
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<SupabaseUser | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) setUser(JSON.parse(raw));
-    } catch { /* ignore */ }
-    setLoading(false);
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      setUser(user);
+      setLoading(false);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+      setLoading(false);
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
-  useEffect(() => {
-    if (!loading) {
-      try {
-        if (user) localStorage.setItem(STORAGE_KEY, JSON.stringify(user));
-        else localStorage.removeItem(STORAGE_KEY);
-      } catch { /* ignore */ }
-    }
-  }, [user, loading]);
-
-  const login = async (email: string, _password: string) => {
-    // Simulate auth — in production, connect to Supabase/Firebase
-    const u: User = { id: crypto.randomUUID(), email, name: email.split("@")[0] };
-    setUser(u);
+  const login = async (email: string, password: string) => {
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) return { error: error.message };
+    return {};
   };
 
-  const signup = async (email: string, _password: string, name?: string) => {
-    const u: User = { id: crypto.randomUUID(), email, name: name || email.split("@")[0] };
-    setUser(u);
+  const signup = async (email: string, password: string, name?: string) => {
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: { data: { name } },
+    });
+    if (error) return { error: error.message };
+    return {};
   };
 
-  const logout = () => setUser(null);
+  const logout = async () => {
+    await supabase.auth.signOut();
+  };
 
   return (
     <AuthContext.Provider value={{ user, loading, login, signup, logout }}>
