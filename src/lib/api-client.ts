@@ -16,7 +16,7 @@ export interface Plan {
 export interface Subscription {
   id: string;
   user_id: string;
-  plan: string;
+  type: string;
   status: string;
   created_at?: string;
   expires_at?: string;
@@ -61,7 +61,7 @@ export async function redeemCode(code: string): Promise<{ success: boolean; mess
     .from("geoweather_subscriptions")
     .insert({
       user_id: user.id,
-      plan: code.toLowerCase().trim(),
+      type: code.toLowerCase().trim(),
       status: "active",
     });
 

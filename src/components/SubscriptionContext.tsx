@@ -44,8 +44,8 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
       const sub = await getUserSubscription();
       if (sub) {
         setSubscription(sub);
-        setPlan(sub.plan);
-        setPlanDetails(getPlanDetails(sub.plan));
+        setPlan(sub.type);
+        setPlanDetails(getPlanDetails(sub.type));
       } else {
         setSubscription(null);
         setPlan("free");
