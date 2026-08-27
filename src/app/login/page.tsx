@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/AuthContext";
 import { getSupabase } from "@/lib/supabase/client";
@@ -11,23 +11,14 @@ export default function LoginPage() {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
 
-  if (authLoading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-      </div>
-    );
-  }
-
-  if (user) {
-    router.push("/");
-    return null;
-  }
+  useEffect(() => {
+    if (!authLoading && user) router.replace("/");
+  }, [user, authLoading, router]);
 
   const handleOAuth = async (provider: "github" | "gitlab") => {
     const sb = getSupabase();
     if (!sb) {
-      setErr("Supabase nicht konfiguriert.");
+      setErr("Supabase nicht konfiguriert. Bitte Environment Variables in Vercel prüfen.");
       return;
     }
     setBusy(true);
@@ -47,6 +38,19 @@ export default function LoginPage() {
     }
   };
 
+  const sb = getSupabase();
+  const configured = !!sb;
+
+  if (authLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+      </div>
+    );
+  }
+
+  if (user) return null;
+
   return (
     <div className="flex min-h-screen items-center justify-center px-4">
       <div className="w-full max-w-sm">
@@ -61,9 +65,15 @@ export default function LoginPage() {
         </div>
 
         <div className="space-y-3 rounded-3xl bg-white/10 p-6 backdrop-blur-md ring-1 ring-white/20 shadow-xl">
+          {!configured && (
+            <p className="rounded-lg bg-yellow-500/20 px-3 py-2 text-sm text-yellow-200">
+              Supabase nicht konfiguriert. Prüfe die Environment Variables.
+            </p>
+          )}
+
           <button
             onClick={() => handleOAuth("github")}
-            disabled={busy}
+            disabled={busy || !configured}
             className="flex w-full items-center justify-center gap-3 rounded-xl bg-[#24292F] py-3.5 font-medium text-white transition hover:bg-[#32383F] disabled:opacity-50"
           >
             <svg viewBox="0 0 24 24" className="h-5 w-5" fill="currentColor">
@@ -74,7 +84,7 @@ export default function LoginPage() {
 
           <button
             onClick={() => handleOAuth("gitlab")}
-            disabled={busy}
+            disabled={busy || !configured}
             className="flex w-full items-center justify-center gap-3 rounded-xl bg-[#FC6D26] py-3.5 font-medium text-white transition hover:bg-[#E55A1B] disabled:opacity-50"
           >
             <svg viewBox="0 0 24 24" className="h-5 w-5" fill="currentColor">

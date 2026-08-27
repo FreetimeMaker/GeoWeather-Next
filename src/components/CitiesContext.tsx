@@ -9,7 +9,7 @@ const STARTER: GeoLocation[] = [
 ];
 
 interface Ctx { cities: GeoLocation[]; addCity: (l: GeoLocation) => void; removeCity: (id: number) => void; }
-const CitiesContext = createContext<Ctx | null>(null);
+const CitiesContext = createContext<Ctx>({ cities: STARTER, addCity: () => {}, removeCity: () => {} });
 
 export function CitiesProvider({ children }: { children: React.ReactNode }) {
   const [cities, setCities] = useState<GeoLocation[]>(STARTER);
@@ -31,7 +31,5 @@ export function CitiesProvider({ children }: { children: React.ReactNode }) {
 }
 
 export function useCities(): Ctx {
-  const ctx = useContext(CitiesContext);
-  if (!ctx) throw new Error("useCities must be used within CitiesProvider");
-  return ctx;
+  return useContext(CitiesContext);
 }

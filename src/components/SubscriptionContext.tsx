@@ -18,7 +18,17 @@ interface SubCtx {
 
 const DEFAULT_PLAN: Plan = { maxLocations: 5, forecastDays: 1, notifications: false };
 
-const SubscriptionContext = createContext<SubCtx | null>(null);
+const SubscriptionContext = createContext<SubCtx>({
+  plan: "free",
+  planDetails: DEFAULT_PLAN,
+  subscription: null,
+  allPlans: {},
+  loading: true,
+  canAddCity: true,
+  canShowForecast: () => true,
+  redeem: async () => ({ success: false }),
+  refresh: async () => {},
+});
 
 export function SubscriptionProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
@@ -49,7 +59,6 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
         setPlanDetails(plansRes.plans.free ?? DEFAULT_PLAN);
       }
     } catch {
-      // API offline — use defaults
       setPlanDetails(DEFAULT_PLAN);
     } finally {
       setLoading(false);
@@ -68,12 +77,12 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
         return { success: true, message: res.message ?? "Code eingelöst!" };
       }
       return { success: false, message: res.message ?? "Ungültiger Code" };
-    } catch (e) {
+    } catch {
       return { success: false, message: "Fehler beim Einlösen" };
     }
   };
 
-  const canAddCity = true; // Always allow — enforce in UI
+  const canAddCity = true;
 
   const canShowForecast = (days: number) => {
     return days <= planDetails.forecastDays;
@@ -87,7 +96,5 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
 }
 
 export function useSubscription(): SubCtx {
-  const ctx = useContext(SubscriptionContext);
-  if (!ctx) throw new Error("useSubscription must be used within SubscriptionProvider");
-  return ctx;
+  return useContext(SubscriptionContext);
 }

@@ -10,32 +10,49 @@ interface AuthCtx {
   logout: () => Promise<void>;
 }
 
-const AuthContext = createContext<AuthCtx | null>(null);
+const AuthContext = createContext<AuthCtx>({
+  user: null,
+  loading: true,
+  logout: async () => {},
+});
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<SupabaseUser | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const sb = getSupabase();
-    if (!sb) { setLoading(false); return; }
+    try {
+      const sb = getSupabase();
+      if (!sb) {
+        setLoading(false);
+        return;
+      }
 
-    sb.auth.getUser().then(({ data: { user } }) => {
-      setUser(user);
+      sb.auth.getUser()
+        .then(({ data: { user } }) => {
+          setUser(user);
+          setLoading(false);
+        })
+        .catch(() => setLoading(false));
+
+      const { data: { subscription } } = sb.auth.onAuthStateChange((_event, session) => {
+        setUser(session?.user ?? null);
+        setLoading(false);
+      });
+
+      return () => subscription.unsubscribe();
+    } catch {
       setLoading(false);
-    }).catch(() => setLoading(false));
-
-    const { data: { subscription } } = sb.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
-
-    return () => subscription.unsubscribe();
+    }
   }, []);
 
   const logout = async () => {
-    const sb = getSupabase();
-    if (sb) await sb.auth.signOut();
+    try {
+      const sb = getSupabase();
+      if (sb) await sb.auth.signOut();
+    } catch {
+      setUser(null);
+    }
   };
 
   return (
@@ -46,7 +63,5 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 }
 
 export function useAuth(): AuthCtx {
-  const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error("useAuth must be used within AuthProvider");
-  return ctx;
+  return useContext(AuthContext);
 }

@@ -7,7 +7,7 @@ const STORAGE_KEY = "geoweather:settings";
 const DEFAULTS: Settings = { tempUnit: "celsius", windUnit: "kmh", pressureUnit: "hpa", lang: "en" };
 
 interface Ctx { settings: Settings; update: (p: Partial<Settings>) => void; }
-const SettingsContext = createContext<Ctx | null>(null);
+const SettingsContext = createContext<Ctx>({ settings: DEFAULTS, update: () => {} });
 
 export function SettingsProvider({ children }: { children: React.ReactNode }) {
   const [settings, setSettings] = useState<Settings>(DEFAULTS);
@@ -27,7 +27,5 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
 }
 
 export function useSettings(): Ctx {
-  const ctx = useContext(SettingsContext);
-  if (!ctx) throw new Error("useSettings must be used within SettingsProvider");
-  return ctx;
+  return useContext(SettingsContext);
 }
