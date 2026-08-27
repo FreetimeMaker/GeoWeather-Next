@@ -17,7 +17,7 @@ export interface Subscription {
   id: string;
   user_id: string;
   type: string;
-  status: string;
+  is_active: boolean;
   created_at?: string;
   expires_at?: string;
 }
@@ -33,7 +33,7 @@ export async function getUserSubscription(): Promise<Subscription | null> {
     .from("geoweather_subscriptions")
     .select("*")
     .eq("user_id", user.id)
-    .eq("status", "active")
+    .eq("is_active", true)
     .order("created_at", { ascending: false })
     .limit(1)
     .maybeSingle();
@@ -62,7 +62,7 @@ export async function redeemCode(code: string): Promise<{ success: boolean; mess
     .insert({
       user_id: user.id,
       type: code.toLowerCase().trim(),
-      status: "active",
+      is_active: true,
     });
 
   if (error) {
