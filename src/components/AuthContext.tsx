@@ -7,8 +7,6 @@ import type { User as SupabaseUser } from "@supabase/supabase-js";
 interface AuthCtx {
   user: SupabaseUser | null;
   loading: boolean;
-  login: (email: string, password: string) => Promise<{ error?: string }>;
-  signup: (email: string, password: string, name?: string) => Promise<{ error?: string }>;
   logout: () => Promise<void>;
 }
 
@@ -35,33 +33,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => subscription.unsubscribe();
   }, []);
 
-  const login = async (email: string, password: string) => {
-    const sb = getSupabase();
-    if (!sb) return { error: "Supabase not configured" };
-    const { error } = await sb.auth.signInWithPassword({ email, password });
-    if (error) return { error: error.message };
-    return {};
-  };
-
-  const signup = async (email: string, password: string, name?: string) => {
-    const sb = getSupabase();
-    if (!sb) return { error: "Supabase not configured" };
-    const { error } = await sb.auth.signUp({
-      email,
-      password,
-      options: { data: { name } },
-    });
-    if (error) return { error: error.message };
-    return {};
-  };
-
   const logout = async () => {
     const sb = getSupabase();
     if (sb) await sb.auth.signOut();
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, signup, logout }}>
+    <AuthContext.Provider value={{ user, loading, logout }}>
       {children}
     </AuthContext.Provider>
   );
