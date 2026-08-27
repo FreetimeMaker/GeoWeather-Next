@@ -8,18 +8,31 @@ export default function LoginPage() {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
-  const [ready, setReady] = useState(false);
+  const [checking, setChecking] = useState(true);
 
   useEffect(() => {
-    setReady(true);
     const sb = getSupabase();
     if (!sb) {
-      setErr("Supabase nicht konfiguriert. Environment Variables prüfen.");
+      setErr("Supabase nicht konfiguriert. ENV Variables prüfen.");
+      setChecking(false);
       return;
     }
-    sb.auth.getUser().then(({ data }) => {
-      if (data.user) router.replace("/");
-    }).catch(() => {});
+
+    sb.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        router.replace("/");
+      } else {
+        setChecking(false);
+      }
+    }).catch(() => setChecking(false));
+
+    const { data: { subscription } } = sb.auth.onAuthStateChange((_event, session) => {
+      if (session) {
+        router.replace("/");
+      }
+    });
+
+    return () => subscription.unsubscribe();
   }, [router]);
 
   const handleOAuth = useCallback(async (provider: "github" | "gitlab") => {
@@ -40,6 +53,19 @@ export default function LoginPage() {
     }
   }, []);
 
+  if (checking) {
+    return (
+      <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <div style={{
+          width: 32, height: 32, border: "3px solid rgba(255,255,255,0.3)",
+          borderTopColor: "white", borderRadius: "50%",
+          animation: "spin 0.8s linear infinite",
+        }} />
+        <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
+      </div>
+    );
+  }
+
   return (
     <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
       <div style={{ width: "100%", maxWidth: 380 }}>
@@ -48,7 +74,7 @@ export default function LoginPage() {
             width: 64, height: 64, margin: "0 auto 12px",
             borderRadius: 16, background: "rgba(255,255,255,0.15)",
             display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: 32, boxShadow: "inset 0 1px 2px rgba(255,255,255,0.2)",
+            fontSize: 32,
           }}>🌤️</div>
           <h1 style={{ fontSize: 28, fontWeight: 700, margin: 0 }}>GeoWeather</h1>
           <p style={{ marginTop: 4, opacity: 0.7 }}>Melde dich an, um loszulegen</p>
@@ -76,7 +102,7 @@ export default function LoginPage() {
               gap: 12, borderRadius: 12, padding: "14px 0", marginBottom: 12,
               background: "#24292F", color: "white", fontSize: 15, fontWeight: 500,
               border: "none", cursor: busy ? "not-allowed" : "pointer",
-              opacity: busy ? 0.5 : 1, transition: "opacity 0.2s",
+              opacity: busy ? 0.5 : 1,
             }}
           >
             <svg viewBox="0 0 24 24" style={{ width: 20, height: 20 }} fill="currentColor">
@@ -93,7 +119,7 @@ export default function LoginPage() {
               gap: 12, borderRadius: 12, padding: "14px 0",
               background: "#FC6D26", color: "white", fontSize: 15, fontWeight: 500,
               border: "none", cursor: busy ? "not-allowed" : "pointer",
-              opacity: busy ? 0.5 : 1, transition: "opacity 0.2s",
+              opacity: busy ? 0.5 : 1,
             }}
           >
             <svg viewBox="0 0 24 24" style={{ width: 20, height: 20 }} fill="currentColor">
