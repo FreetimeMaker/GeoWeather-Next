@@ -1,10 +1,10 @@
-"use client";
-
 import "./globals.css";
-import { SettingsProvider } from "@/components/SettingsContext";
-import { CitiesProvider } from "@/components/CitiesContext";
-import { AuthProvider } from "@/components/AuthContext";
-import { SubscriptionProvider } from "@/components/SubscriptionContext";
+import { Providers } from "@/components/Providers";
+
+export const metadata = {
+  title: "GeoWeather",
+  description: "A modern weather app",
+};
 
 export default function RootLayout({
   children,
@@ -17,13 +17,7 @@ export default function RootLayout({
         className="min-h-screen bg-gradient-to-b from-sky-500 via-blue-600 to-indigo-800 font-sans text-white"
         style={{ backgroundAttachment: "fixed" }}
       >
-        <AuthProvider>
-          <SubscriptionProvider>
-            <SettingsProvider>
-              <CitiesProvider>{children}</CitiesProvider>
-            </SettingsProvider>
-          </SubscriptionProvider>
-        </AuthProvider>
+        <Providers>{children}</Providers>
       </body>
     </html>
   );
