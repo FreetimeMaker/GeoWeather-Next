@@ -1,10 +1,10 @@
 import { getSupabase } from "@/lib/supabase/client";
 
 const PLAN_DETAILS: Record<string, { maxLocations: number; forecastDays: number; notifications: boolean }> = {
-  free: { maxLocations: 5, forecastDays: 1, notifications: false },
-  freemium: { maxLocations: 10, forecastDays: 3, notifications: true },
-  premium: { maxLocations: 15, forecastDays: 7, notifications: true },
-  ultrimium: { maxLocations: 20, forecastDays: 14, notifications: true },
+  free: { maxLocations: 1, forecastDays: 7, notifications: false },
+  freemium: { maxLocations: 5, forecastDays: 14, notifications: true },
+  premium: { maxLocations: 9999, forecastDays: 16, notifications: true },
+  ultrimium: { maxLocations: 9999, forecastDays: 16, notifications: true },
 };
 
 export interface Plan {
