@@ -4,6 +4,8 @@ import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { getSupabase } from "@/lib/supabase/client";
 
+const basePath = process.env.NEXT_PUBLIC_BASE_PATH || "";
+
 export default function LoginPage() {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
@@ -45,7 +47,7 @@ export default function LoginPage() {
     setErr("");
     const { error } = await sb.auth.signInWithOAuth({
       provider,
-      options: { redirectTo: `${window.location.origin}/geoweather` },
+      options: { redirectTo: `${window.location.origin}${basePath}` },
     });
     if (error) {
       setErr(error.message);
